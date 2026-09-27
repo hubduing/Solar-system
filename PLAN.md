@@ -21,10 +21,10 @@ git push -u origin main
 ## Шаги
 
 ### Шаг 0. Инициализация
-- [ ] Vite React шаблон в текущей папке
-- [ ] `vite.config.js`: `base: '/Solar-system/'` для Pages
-- [ ] `.gitignore`, первый коммит, привязка remote (команды выше), `git push -u origin main`
-- Статус: не начат
+- [x] Vite React шаблон в текущей папке
+- [x] `vite.config.js`: `base: '/Solar-system/'` для Pages
+- [x] `.gitignore`, первый коммит, привязка remote (команды выше), `git push -u origin main`
+- Статус: выполнен / Что сделано: Vite React 18 + Vite 6, base '/Solar-system/', `npm run build` OK (29 модулей), `SolarCanvas`-заглушка, push в main (d718e53).
 
 ### Шаг 1. Canvas-ядро + Священная Терра
 - [ ] Компонент `SolarCanvas`: цикл `requestAnimationFrame`, камера pan/zoom, звездный фон
