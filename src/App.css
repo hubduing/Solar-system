@@ -1,6 +1,14 @@
 .app { display: flex; flex-direction: column; height: 100vh; }
-.hud-header { padding: 12px 16px; border-bottom: 1px solid #c9a227; }
+.hud-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #c9a227; }
 .hud-header h1 { font-size: 18px; letter-spacing: 3px; color: #c9a227; }
 .subtitle { font-size: 12px; opacity: 0.7; }
-.viewport { flex: 1; position: relative; }
-.solar-canvas { width: 100%; height: 100%; display: block; }
+.hud-controls { display: flex; gap: 8px; }
+.hud-controls button, .dossier button { background: #11131a; color: #c9a227; border: 1px solid #c9a227; padding: 4px 10px; cursor: pointer; font-family: monospace; }
+.hud-controls button:hover, .dossier button:hover { background: #c9a227; color: #111; }
+.viewport { flex: 1; position: relative; min-height: 0; }
+.solar-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+.dossier { position: absolute; top: 12px; right: 12px; width: 280px; background: rgba(8,10,15,0.92); border: 1px solid #c9a227; padding: 12px; font-size: 12px; }
+.dossier h2 { color: #c9a227; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
+.dossier p { margin: 6px 0; line-height: 1.45; }
+.dossier .faction { color: #8f8a76; }
+.hud-footer { padding: 6px 16px; border-top: 1px solid #333; font-size: 11px; opacity: 0.65; }
