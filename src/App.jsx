@@ -7,9 +7,20 @@ import './App.css'
 const SPEEDS = [1, 10, 100]
 const SWARM_SIZES = [7000, 10000, 30000]
 
+const SOL_ENTRY = {
+  id: 'sol',
+  name: 'СОЛНЦЕ',
+  subtitle: 'Астрономикон · Центр',
+  faction: 'Империум',
+  color: '#ffd76a',
+  desc: 'Астрономикон — маяк Императора. Свет, по которому идут варп-караваны. Подлёт ближе запрещён эдиктом Инквизиции.',
+}
+
 export default function App() {
   const [selected, setSelected] = useState(null)
   const [query, setQuery] = useState('')
+  const [listQuery, setListQuery] = useState('')
+  const [leftOpen, setLeftOpen] = useState(true)
   const [aliveIds, setAliveIds] = useState(null) // null = все живы
   const [paused, setPaused] = useState(false)
   const [timeScale, setTimeScale] = useState(1)
@@ -63,6 +74,11 @@ export default function App() {
 
   const alive = aliveIds ? new Set(aliveIds) : null
   const visibleBodies = BODIES.filter((b) => !alive || alive.has(b.id))
+  const allObjects = [SOL_ENTRY, ...visibleBodies]
+  const lq = listQuery.trim().toLowerCase()
+  const listItems = lq
+    ? allObjects.filter((b) => (b.name + ' ' + b.subtitle + ' ' + b.faction).toLowerCase().includes(lq))
+    : allObjects
   const q = query.trim().toLowerCase()
   const results = q
     ? visibleBodies.filter((b) => (b.name + ' ' + b.subtitle + ' ' + b.faction).toLowerCase().includes(q)).slice(0, 6)
@@ -79,7 +95,7 @@ export default function App() {
   }
 
   const doExterminatus = () => {
-    if (!selected || selected.isSwarm) return
+    if (!selected || selected.isSwarm || selected.id === 'sol') return
     canvasApi.current?.exterminatus(selected.id)
     // canvas сам вызовет onSelect(null) + onBodiesChange
   }
@@ -143,6 +159,43 @@ export default function App() {
       </header>
       <main className="viewport">
         <SolarCanvas ref={canvasApi} onSelect={setSelected} onBodiesChange={setAliveIds} />
+        <aside className={leftOpen ? 'objects-panel open' : 'objects-panel collapsed'}>
+          <button
+            className="panel-toggle"
+            onClick={() => setLeftOpen((v) => !v)}
+            title={leftOpen ? 'Свернуть реестр' : 'Развернуть реестр'}
+          >
+            {leftOpen ? '◀ РЕЕСТР' : 'РЕЕСТР ▶'}
+          </button>
+          {leftOpen && (
+            <>
+              <input
+                className="search-input"
+                placeholder="Фильтр: имя, мир, фракция…"
+                value={listQuery}
+                onChange={(e) => setListQuery(e.target.value)}
+              />
+              <div className="obj-count">
+                Объектов: {listItems.length} / {allObjects.length}
+              </div>
+              <div className="obj-list">
+                {listItems.length === 0 && <div className="no-result">Ничего не найдено.</div>}
+                {listItems.map((b) => (
+                  <button
+                    key={b.id}
+                    className={selected?.id === b.id && !selected?.isSwarm ? 'obj-item active' : 'obj-item'}
+                    onClick={() => pickBody(b)}
+                    title={`${b.name} — ${b.subtitle}`}
+                  >
+                    <i className="obj-dot" style={{ background: b.color || '#8a8f96' }} />
+                    <span className="obj-name">{b.name}</span>
+                    <span className="obj-sub">{b.subtitle}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </aside>
         <aside className="dossier">
           <div className="search-block">
             <input
@@ -182,7 +235,7 @@ export default function App() {
               <p className="faction">{selected.subtitle}</p>
               <p className="faction">Фракция: {selected.faction}</p>
               <p>{selected.desc}</p>
-              {!selected.isSwarm && (
+              {!selected.isSwarm && selected.id !== 'sol' && (
                 <button className="exterminatus" onClick={doExterminatus} title="Уничтожить мир">
                   ☠ EXTERMINATUS
                 </button>

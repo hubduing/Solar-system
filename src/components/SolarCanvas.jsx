@@ -70,6 +70,13 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
     focusBody(id) {
       const s = stateRef.current
       if (!s) return
+      if (id === 'sol') {
+        s.cam.x = 0
+        s.cam.y = 0
+        s.selectedId = null
+        s.userMoved = true
+        return
+      }
       const p = s.lastPos?.find((b) => b.id === id)
       if (p) {
         s.cam.x = p.x
