@@ -12,8 +12,11 @@ export default function App() {
     <div className="app">
       <header className="hud-header">
         <div>
-          <h1>SOLAR SYSTEM M42</h1>
-          <span className="subtitle">Тактический стол Инквизиции — Шаг 2: тысячи объектов</span>
+          <div className="hud-title-row">
+            <span className="aquila">☩</span>
+            <h1>SOLAR SYSTEM M42</h1>
+          </div>
+          <span className="subtitle">Тактический стол Инквизиции — <b>Шаг 3: атмосфера M42</b></span>
         </div>
         <div className="hud-controls">
           <button onClick={() => canvasApi.current?.zoomBy(1.25)}>+</button>
@@ -37,6 +40,7 @@ export default function App() {
               <h2>ДОСЬЕ</h2>
               <p>Клик по телу — досье. Drag — панорама. Колесо — зум. Двойной клик / R — сброс.</p>
               <p className="faction">Именованных тел: {BODIES.length} + Солнце · Рой: {SWARM_TOTAL}</p>
+              <p className="omen">ЗНАМЕНИЯ M42: 3 варп-разлома · ☩ обломки Кадии (260) · 6 халков · поля Геллера: Терра, Юпитер, Сатурн · 5 туманностей</p>
               <ul className="faction" style={{ paddingLeft: 16, margin: '8px 0' }}>
                 <li>Пояса астероидов: 4500</li>
                 <li>Орбитальный мусор: 800</li>
@@ -51,6 +55,7 @@ export default function App() {
       </main>
       <footer className="hud-footer">
         <span>drag — панорама · wheel — зум · click — досье · dblclick/R — сброс</span>
+        <span className="runes">☩ ᛁᚾᛞᚢᛚᚷᛖᚾᚲᛁᚨ ☩ M42 ☩</span>
       </footer>
     </div>
   )

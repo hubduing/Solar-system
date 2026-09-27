@@ -1,3 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { height: 100%; }
-body { background: #05060a; color: #d6d3c8; font-family: monospace; }
+body {
+  background: #05060a;
+  color: #d6d3c8;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  background-image: radial-gradient(ellipse at 50% 40%, rgba(201,162,39,0.05), transparent 65%);
+}
+h1, h2, .gothic {
+  font-family: 'Cinzel', Georgia, 'Times New Roman', serif;
+}

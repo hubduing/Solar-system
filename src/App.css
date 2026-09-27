@@ -1,14 +1,80 @@
 .app { display: flex; flex-direction: column; height: 100vh; }
-.hud-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #c9a227; }
-.hud-header h1 { font-size: 18px; letter-spacing: 3px; color: #c9a227; }
+
+/* --- Готический HUD M42: металл + золото + руны --- */
+.hud-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 18px;
+  border-bottom: 1px solid #c9a227;
+  background:
+    linear-gradient(180deg, rgba(201,162,39,0.10), transparent 55%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 4px),
+    linear-gradient(180deg, #101319, #080a0f);
+  box-shadow: 0 1px 12px rgba(201,162,39,0.25), inset 0 -1px 0 rgba(201,162,39,0.35);
+  position: relative;
+}
+.hud-header::after {
+  content: 'ᚠ ᚱ ᛟ ᚾ ᛏ ᛖ ᚱ ᚨ';
+  position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%);
+  background: #080a0f; color: rgba(201,162,39,0.75);
+  font-size: 10px; letter-spacing: 6px; padding: 0 12px;
+}
+.hud-header h1 {
+  font-size: 19px; letter-spacing: 4px; color: #e8c84a;
+  text-shadow: 0 0 12px rgba(232,200,74,0.55), 0 0 2px rgba(232,200,74,0.9);
+  font-weight: 700;
+}
+.hud-title-row { display: flex; align-items: center; gap: 12px; }
+.aquila { color: #c9a227; font-size: 22px; text-shadow: 0 0 10px rgba(201,162,39,0.7); }
 .subtitle { font-size: 12px; opacity: 0.7; }
+.subtitle b { color: #e8c84a; font-weight: 600; }
 .hud-controls { display: flex; gap: 8px; }
-.hud-controls button, .dossier button { background: #11131a; color: #c9a227; border: 1px solid #c9a227; padding: 4px 10px; cursor: pointer; font-family: monospace; }
+.hud-controls button, .dossier button {
+  background: linear-gradient(180deg, #1a1e27, #0c0e14);
+  color: #e8c84a; border: 1px solid #c9a227;
+  padding: 4px 10px; cursor: pointer; font-family: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), 0 0 8px rgba(201,162,39,0.15);
+}
 .hud-controls button:hover, .dossier button:hover { background: #c9a227; color: #111; }
-.viewport { flex: 1; position: relative; min-height: 0; }
+
+.viewport { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+/* виньетка + сканлайны поверх канваса, клики пропускаем */
+.viewport::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.016) 0 1px, transparent 1px 3px);
+}
 .solar-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
-.dossier { position: absolute; top: 12px; right: 12px; width: 280px; background: rgba(8,10,15,0.92); border: 1px solid #c9a227; padding: 12px; font-size: 12px; }
-.dossier h2 { color: #c9a227; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
+
+/* Досье — пергамент-металл с двойной рамкой и заклёпками */
+.dossier {
+  position: absolute; top: 12px; right: 12px; width: 292px; z-index: 6;
+  background:
+    linear-gradient(180deg, rgba(201,162,39,0.08), transparent 30%),
+    linear-gradient(180deg, rgba(14,16,22,0.96), rgba(8,10,15,0.94));
+  border: 1px solid #c9a227;
+  outline: 1px solid rgba(201,162,39,0.35);
+  outline-offset: 3px;
+  padding: 14px 14px 12px; font-size: 12px;
+  box-shadow: 0 0 24px rgba(0,0,0,0.7), 0 0 14px rgba(201,162,39,0.12);
+}
+.dossier::before {
+  content: '❖ ❖ ❖'; display: block; text-align: center;
+  color: rgba(201,162,39,0.6); font-size: 10px; letter-spacing: 4px; margin-bottom: 6px;
+}
+.dossier h2 {
+  color: #e8c84a; font-size: 15px; letter-spacing: 3px; margin-bottom: 6px;
+  text-shadow: 0 0 10px rgba(232,200,74,0.4);
+  border-bottom: 1px solid rgba(201,162,39,0.4); padding-bottom: 6px;
+}
 .dossier p { margin: 6px 0; line-height: 1.45; }
 .dossier .faction { color: #8f8a76; }
-.hud-footer { padding: 6px 16px; border-top: 1px solid #333; font-size: 11px; opacity: 0.65; }
+.dossier .omen { color: #b49b4a; }
+.dossier ul { list-style: '☩ '; }
+.hud-footer {
+  padding: 8px 16px; border-top: 1px solid #333; font-size: 11px;
+  display: flex; justify-content: space-between; gap: 12px;
+  background: linear-gradient(0deg, #0d0f16, #07080c);
+  color: rgba(214,211,200,0.75);
+}
+.hud-footer .runes { color: rgba(201,162,39,0.6); letter-spacing: 3px; }

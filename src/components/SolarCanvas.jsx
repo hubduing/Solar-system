@@ -1,6 +1,15 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { BODIES } from '../data/bodies.js'
 import { KIND_INFO, createSwarm, updateSwarm } from '../sim/swarm.js'
+import {
+  createAtmosphere,
+  updateAtmosphere,
+  drawNebulas,
+  drawCadia,
+  drawRifts,
+  drawHulks,
+  drawGellar,
+} from '../sim/atmosphere.js'
 
 // Детерминированный ГПСЧ для звездного фона
 function mulberry32(seed) {
@@ -50,6 +59,7 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       fitZoom: 0.5,
       stars: [],
       swarm: createSwarm(),
+      atmo: createAtmosphere(),
       time: 0,
       fps: 60,
       selectedId: null,
@@ -194,12 +204,17 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       s.time += dt
       for (const b of s.bodies) b.angle += ((Math.PI * 2) / b.period) * dt
       updateSwarm(s.swarm, dt)
+      updateAtmosphere(s.atmo, dt)
 
       const r = canvas.getBoundingClientRect()
       const w = r.width
       const h = r.height
       ctx.fillStyle = '#05060a'
       ctx.fillRect(0, 0, w, h)
+
+      const sx = { w, h, cam: s.cam }
+      // туманности M42 — самый дальний слой
+      drawNebulas(ctx, s.atmo, sx)
 
       // тактическая сетка
       ctx.strokeStyle = 'rgba(201,162,39,0.07)'
@@ -230,6 +245,9 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       }
       ctx.globalAlpha = 1
 
+      // обломки Кадии — под роем
+      drawCadia(ctx, s.atmo, sx)
+
       // рой: тысячи малых объектов из типизированных массивов (точки, culling)
       const sw = s.swarm
       const halfW = w / 2
@@ -247,6 +265,10 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       }
 
       const c = worldToScreen(0, 0)
+
+      // варп-разломы — над роем, под планетами; халки — над роем
+      drawRifts(ctx, s.atmo, sx)
+      drawHulks(ctx, s.atmo, sx)
 
       // орбиты планет (без лун)
       ctx.strokeStyle = 'rgba(214,211,200,0.14)'
@@ -326,6 +348,11 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
         ctx.fillStyle = isSel ? '#c9a227' : 'rgba(214,211,200,0.85)'
         ctx.fillText(b.name, sp.x + rr + 5, sp.y - 8)
       }
+
+      // поля Геллера — поверх тел, по карте id->позиция
+      const posById = {}
+      for (const b of pos) posById[b.id] = b
+      drawGellar(ctx, s.atmo, posById, sx)
 
       // подпись центра + FPS
       ctx.font = '11px monospace'
