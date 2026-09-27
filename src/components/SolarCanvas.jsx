@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { BODIES } from '../data/bodies.js'
+import { KIND_INFO, createSwarm, updateSwarm } from '../sim/swarm.js'
 
 // Детерминированный ГПСЧ для звездного фона
 function mulberry32(seed) {
@@ -48,6 +49,7 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       cam: { x: 0, y: 0, zoom: 1 },
       fitZoom: 0.5,
       stars: [],
+      swarm: createSwarm(),
       time: 0,
       fps: 60,
       selectedId: null,
@@ -191,6 +193,7 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       s.fps += (1 / Math.max(dt, 1e-4) - s.fps) * 0.05
       s.time += dt
       for (const b of s.bodies) b.angle += ((Math.PI * 2) / b.period) * dt
+      updateSwarm(s.swarm, dt)
 
       const r = canvas.getBoundingClientRect()
       const w = r.width
@@ -226,6 +229,22 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
         ctx.fillRect(sp.x, sp.y, st.r, st.r)
       }
       ctx.globalAlpha = 1
+
+      // рой: тысячи малых объектов из типизированных массивов (точки, culling)
+      const sw = s.swarm
+      const halfW = w / 2
+      const halfH = h / 2
+      for (const g of sw.groups) {
+        ctx.fillStyle = KIND_INFO[g.kind].color
+        for (let k = g.start; k < g.end; k++) {
+          const sx = (sw.x[k] - s.cam.x) * s.cam.zoom + halfW
+          if (sx < 0 || sx > w) continue
+          const sy = (sw.y[k] - s.cam.y) * s.cam.zoom + halfH
+          if (sy < 0 || sy > h) continue
+          const px = sw.size[k]
+          ctx.fillRect(sx, sy, px, px)
+        }
+      }
 
       const c = worldToScreen(0, 0)
 
@@ -313,7 +332,7 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect }, ref) {
       ctx.fillStyle = 'rgba(201,162,39,0.8)'
       ctx.fillText('СОЛНЦЕ · АСТРОНОМИКОН', c.x + 12, c.y + 10)
       ctx.fillStyle = 'rgba(214,211,200,0.6)'
-      ctx.fillText(`${Math.round(s.fps)} FPS · тел: ${pos.length}`, 12, 12)
+      ctx.fillText(`${Math.round(s.fps)} FPS · тел: ${pos.length} + рой: ${s.swarm.n}`, 12, 12)
 
       raf = requestAnimationFrame(loop)
     }

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import SolarCanvas from './components/SolarCanvas.jsx'
 import { BODIES } from './data/bodies.js'
+import { SWARM_TOTAL } from './sim/swarm.js'
 import './App.css'
 
 export default function App() {
@@ -12,7 +13,7 @@ export default function App() {
       <header className="hud-header">
         <div>
           <h1>SOLAR SYSTEM M42</h1>
-          <span className="subtitle">Тактический стол Инквизиции — Шаг 1: ядро + Священная Терра</span>
+          <span className="subtitle">Тактический стол Инквизиции — Шаг 2: тысячи объектов</span>
         </div>
         <div className="hud-controls">
           <button onClick={() => canvasApi.current?.zoomBy(1.25)}>+</button>
@@ -35,7 +36,15 @@ export default function App() {
             <>
               <h2>ДОСЬЕ</h2>
               <p>Клик по телу — досье. Drag — панорама. Колесо — зум. Двойной клик / R — сброс.</p>
-              <p className="faction">Именованных тел: {BODIES.length} + Солнце</p>
+              <p className="faction">Именованных тел: {BODIES.length} + Солнце · Рой: {SWARM_TOTAL}</p>
+              <ul className="faction" style={{ paddingLeft: 16, margin: '8px 0' }}>
+                <li>Пояса астероидов: 4500</li>
+                <li>Орбитальный мусор: 800</li>
+                <li>Торговые караваны: 600</li>
+                <li>Патрули Империума: 400</li>
+                <li>Флот Хаоса: 400</li>
+                <li>Щупальце Тиранид: 300</li>
+              </ul>
             </>
           )}
         </aside>
