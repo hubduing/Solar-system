@@ -55,6 +55,45 @@ export const SWARM_TOTAL = 7000
 export function createSwarm(total = SWARM_TOTAL, seed = 1337) {
   const rand = mulberry32(seed)
 
+  // Шаг 5: пропорциональное масштабирование групп под любой total (тест 10к/30к).
+  // Базовый план в сумме даёт 7000; масштабируем с сохранением пропорций.
+  const basePlan = [
+    { kind: KINDS.ASTEROID, count: 3000 }, // главный пояс Марс–Юпитер
+    { kind: KINDS.ASTEROID, count: 1500 }, // пояс Койпера
+    { kind: KINDS.DEBRIS, count: 800 }, // мусор у орбиты Терры
+    { kind: KINDS.TRADER, count: 600 }, // караваны Терра–Юпитер
+    { kind: KINDS.PATROL, count: 400 }, // патрули у Юпитера/Сатурна
+    { kind: KINDS.CHAOS_SHIP, count: 400 }, // флот Хаоса на краю
+    { kind: KINDS.TYRANID, count: 300 }, // щупальце Тиранид
+  ]
+  const baseTotal = basePlan.reduce((a, b) => a + b.count, 0)
+  const plan =
+    total === baseTotal
+      ? basePlan
+      : (() => {
+          const scaled = basePlan.map((b) => ({
+            kind: b.kind,
+            count: Math.max(1, Math.round((b.count / baseTotal) * total)),
+          }))
+          // корректируем округление, чтобы сумма точно равнялась total
+          let diff = total - scaled.reduce((a, b) => a + b.count, 0)
+          let k = 0
+          while (diff !== 0) {
+            const idx = k % scaled.length
+            if (diff > 0) {
+              scaled[idx].count++
+              diff--
+            } else if (scaled[idx].count > 1) {
+              scaled[idx].count--
+              diff++
+            }
+            k++
+            if (k > total + scaled.length * 2) break
+          }
+          return scaled
+        })()
+  total = plan.reduce((a, b) => a + b.count, 0)
+
   const x = new Float32Array(total)
   const y = new Float32Array(total)
   const vx = new Float32Array(total)
@@ -68,16 +107,6 @@ export function createSwarm(total = SWARM_TOTAL, seed = 1337) {
   const size = new Uint8Array(total)
 
   // Группы идут непрерывными блоками — удобно для батч-отрисовки по kind.
-  const plan = [
-    { kind: KINDS.ASTEROID, count: 3000 }, // главный пояс Марс–Юпитер
-    { kind: KINDS.ASTEROID, count: 1500 }, // пояс Койпера
-    { kind: KINDS.DEBRIS, count: 800 }, // мусор у орбиты Терры
-    { kind: KINDS.TRADER, count: 600 }, // караваны Терра–Юпитер
-    { kind: KINDS.PATROL, count: 400 }, // патрули у Юпитера/Сатурна
-    { kind: KINDS.CHAOS_SHIP, count: 400 }, // флот Хаоса на краю
-    { kind: KINDS.TYRANID, count: 300 }, // щупальце Тиранид
-  ]
-
   const groups = []
   let i = 0
   let beltIndex = 0

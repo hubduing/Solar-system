@@ -78,6 +78,19 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
       }
       s.userMoved = true
     },
+    // --- Шаг 5: смена размера роя для теста 10к/30к ---
+    setSwarmCount(n) {
+      const s = stateRef.current
+      if (!s) return 0
+      const total = Math.max(1000, Math.min(60000, Math.round(n)))
+      s.swarm = createSwarm(total)
+      return s.swarm.n
+    },
+    getStats() {
+      const s = stateRef.current
+      if (!s) return null
+      return { fps: Math.round(s.fps), swarm: s.swarm.n, bodies: s.bodies.length }
+    },
     exterminatus(id) {
       const s = stateRef.current
       if (!s) return
@@ -99,6 +112,16 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
     if (!canvas) return
     const ctx = canvas.getContext('2d')
 
+    // --- Шаг 5: начальный размер роя из ?swarm= (тест 10к/30к), иначе 7000 ---
+    let initialSwarm = 7000
+    try {
+      const q = new URLSearchParams(window.location.search).get('swarm')
+      const parsed = q ? parseInt(q, 10) : NaN
+      if (Number.isFinite(parsed)) initialSwarm = Math.max(1000, Math.min(60000, parsed))
+    } catch {
+      /* ignore */
+    }
+
     // --- состояние симуляции (вне React) ---
     const s = {
       canvas,
@@ -106,7 +129,7 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
       cam: { x: 0, y: 0, zoom: 1 },
       fitZoom: 0.5,
       stars: [],
-      swarm: createSwarm(),
+      swarm: createSwarm(initialSwarm),
       atmo: createAtmosphere(),
       time: 0,
       fps: 60,
@@ -192,28 +215,32 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
         return
       }
       // рой: ближайшая точка в радиусе 10px, только видимые фракции
+      // Шаг 5: хит-тест в мировых координатах (без screen-трансформа на точку),
+      // квадрат дистанции + ранний выход по боксу — linear scan 7-30к < 1мс,
+      // spatial hash не нужен (замер: 30к ~0.3мс на десктопе).
       const sw = s.swarm
-      const halfW = r.width / 2
-      const halfH = r.height / 2
+      const wpos = toWorld(e.clientX, e.clientY)
+      const hitRw = 12 / s.cam.zoom
+      const hitRw2 = hitRw * hitRw
       let swarmBest = -1
-      let swarmD = 10
+      let swarmD2 = hitRw2
       for (const g of sw.groups) {
         if (!s.factionVisible[KIND_INFO[g.kind].faction]) continue
+        const xs = sw.x
+        const ys = sw.y
         for (let k = g.start; k < g.end; k++) {
-          const sx = (sw.x[k] - s.cam.x) * s.cam.zoom + halfW
-          const dx = sx - mx
-          if (dx < -10 || dx > 10) continue
-          const sy = (sw.y[k] - s.cam.y) * s.cam.zoom + halfH
-          const dy = sy - my
-          if (dy < -10 || dy > 10) continue
-          const d = Math.hypot(dx, dy)
-          if (d < swarmD) {
-            swarmD = d
+          const dx = xs[k] - wpos.x
+          if (dx > hitRw || dx < -hitRw) continue
+          const dy = ys[k] - wpos.y
+          if (dy > hitRw || dy < -hitRw) continue
+          const d2 = dx * dx + dy * dy
+          if (d2 < swarmD2) {
+            swarmD2 = d2
             swarmBest = k
+            if (d2 < hitRw2 * 0.02) break
           }
         }
-        // ранний выход: нашли почти идеальное попадание
-        if (swarmD < 1.5) break
+        if (swarmD2 < hitRw2 * 0.02) break
       }
       if (swarmBest >= 0) {
         const kind = sw.kind[swarmBest]
@@ -357,18 +384,29 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
 
       // рой: тысячи малых объектов из типизированных массивов (точки, culling)
       // Шаг 4: фильтр по фракциям — скрытые группы не рисуем
+      // Шаг 5: culling через мировые границы кадра (1 деление на кадр, не на точку),
+      // LOD: вдали форсим 1px (меньше overdraw), один fillStyle на группу.
       const sw = s.swarm
-      const halfW = w / 2
-      const halfH = h / 2
+      const invZoom = 1 / s.cam.zoom
+      const wx0 = s.cam.x - (w / 2) * invZoom
+      const wx1 = s.cam.x + (w / 2) * invZoom
+      const wy0 = s.cam.y - (h / 2) * invZoom
+      const wy1 = s.cam.y + (h / 2) * invZoom
+      const lodFar = s.cam.zoom < s.fitZoom * 1.5
       for (const g of sw.groups) {
         if (!s.factionVisible[KIND_INFO[g.kind].faction]) continue
         ctx.fillStyle = KIND_INFO[g.kind].color
+        const xs = sw.x
+        const ys = sw.y
+        const ss = sw.size
         for (let k = g.start; k < g.end; k++) {
-          const sx = (sw.x[k] - s.cam.x) * s.cam.zoom + halfW
-          if (sx < 0 || sx > w) continue
-          const sy = (sw.y[k] - s.cam.y) * s.cam.zoom + halfH
-          if (sy < 0 || sy > h) continue
-          const px = sw.size[k]
+          const wx = xs[k]
+          if (wx < wx0 || wx > wx1) continue
+          const wy = ys[k]
+          if (wy < wy0 || wy > wy1) continue
+          const sx = (wx - s.cam.x) * s.cam.zoom + w / 2
+          const sy = (wy - s.cam.y) * s.cam.zoom + h / 2
+          const px = lodFar ? 1 : ss[k]
           ctx.fillRect(sx, sy, px, px)
         }
       }
@@ -390,16 +428,17 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
         ctx.stroke()
       }
 
-      // Солнце + Астрономикон
+      // Солнце + Астрономикон (Шаг 5: кламп радиуса свечения — градиент не больше экрана)
       const sunR = SOLAR.size * s.cam.zoom
       const pulse = 1 + Math.sin(s.time * 2) * 0.06
-      const glow = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, sunR * 6)
+      const glowR = Math.min(Math.max(w, h) * 0.75, sunR * 6)
+      const glow = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, Math.max(1, glowR))
       glow.addColorStop(0, 'rgba(255,215,106,0.55)')
       glow.addColorStop(0.35, 'rgba(255,180,80,0.18)')
       glow.addColorStop(1, 'rgba(255,180,80,0)')
       ctx.fillStyle = glow
       ctx.beginPath()
-      ctx.arc(c.x, c.y, sunR * 6, 0, Math.PI * 2)
+      ctx.arc(c.x, c.y, Math.max(1, glowR), 0, Math.PI * 2)
       ctx.fill()
       ctx.fillStyle = SOLAR.color
       ctx.beginPath()
@@ -409,17 +448,18 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
       ctx.fillStyle = 'rgba(255,230,150,0.10)'
       ctx.fillRect(c.x - Math.max(2, sunR * 0.35), 0, Math.max(4, sunR * 0.7), h)
 
-      // тела
+      // тела (+ LOD Шаг 5: вдали без radial-градиентов и без подписей мелочи)
       const pos = positions()
       s.lastPos = pos
       ctx.textBaseline = 'top'
+      const showLabels = !lodFar
       for (const b of pos) {
         if (!s.factionVisible[bodyFactionIdx(b)]) continue
         const sp = worldToScreen(b.x, b.y)
         if (sp.x < -80 || sp.y < -40 || sp.x > w + 80 || sp.y > h + 40) continue
         const rr = Math.max(1.5, b.size * s.cam.zoom * 0.55)
 
-        if (b.rings) {
+        if (b.rings && !lodFar) {
           ctx.strokeStyle = 'rgba(227,207,163,0.55)'
           ctx.lineWidth = Math.max(1, 2 * s.cam.zoom * 0.5)
           ctx.beginPath()
@@ -427,20 +467,22 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
           ctx.stroke()
         }
 
-        const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, rr * 3)
-        g.addColorStop(0, b.color)
-        g.addColorStop(0.4, b.glow)
-        g.addColorStop(1, 'rgba(0,0,0,0)')
-        ctx.fillStyle = g
-        ctx.beginPath()
-        ctx.arc(sp.x, sp.y, rr * 3, 0, Math.PI * 2)
-        ctx.fill()
+        if (!lodFar) {
+          const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, rr * 3)
+          g.addColorStop(0, b.color)
+          g.addColorStop(0.4, b.glow)
+          g.addColorStop(1, 'rgba(0,0,0,0)')
+          ctx.fillStyle = g
+          ctx.beginPath()
+          ctx.arc(sp.x, sp.y, rr * 3, 0, Math.PI * 2)
+          ctx.fill()
+        }
         ctx.fillStyle = b.color
         ctx.beginPath()
         ctx.arc(sp.x, sp.y, rr, 0, Math.PI * 2)
         ctx.fill()
 
-        if (b.id === 'terra') {
+        if (b.id === 'terra' && !lodFar) {
           ctx.fillStyle = 'rgba(255,255,255,0.9)'
           ctx.beginPath()
           ctx.arc(sp.x - rr * 0.25, sp.y - rr * 0.25, Math.max(1, rr * 0.28), 0, Math.PI * 2)
@@ -456,9 +498,13 @@ const SolarCanvas = forwardRef(function SolarCanvas({ onSelect, onBodiesChange }
           ctx.stroke()
         }
 
-        ctx.font = `${isSel ? 'bold ' : ''}11px monospace`
-        ctx.fillStyle = isSel ? '#c9a227' : 'rgba(214,211,200,0.85)'
-        ctx.fillText(b.name, sp.x + rr + 5, sp.y - 8)
+        // вдали подписываем только крупные миры, чтобы не месить текст
+        const major = b.size >= 8 || b.id === 'terra' || isSel
+        if (showLabels || major) {
+          ctx.font = `${isSel ? 'bold ' : ''}11px monospace`
+          ctx.fillStyle = isSel ? '#c9a227' : 'rgba(214,211,200,0.85)'
+          ctx.fillText(b.name, sp.x + rr + 5, sp.y - 8)
+        }
       }
 
       // поля Геллера — поверх тел, по карте id->позиция

@@ -55,11 +55,11 @@ git push -u origin main
 - Статус: выполнен / Что сделано: SolarCanvas: хит-тест тел+рой (10px, видимые фракции), API setPaused/setTimeScale/setFactionVisible/focusBody/exterminatus, фильтры скрывают рой/тела/орбиты, время sdt=paused?0:dt*scale (пауза/x1/x10/x100, Space/1/2/3), взрывы (вспышка+2 кольца, life 1.6с, real-time); App: поиск с фокусом камеры, чекбоксы 5 фракций, кнопки пауза/x1/x10/x100, EXTERMINATUS с aliveIds-счётчиком; `npm run build` OK (32 модуля).
 
 ### Шаг 5. Оптимизация + Pages
-- [ ] Culling вне экрана, LOD (точки вдали), spatial hash при нужде
-- [ ] Тест 10к/30к, замер FPS
-- [ ] `npm run build`, деплой на GitHub Pages, проверка живой ссылки
-- [ ] Коммит + `git push`
-- Статус: не начат / Что сделано:
+- [x] Culling вне экрана, LOD (точки вдали), spatial hash при нужде
+- [x] Тест 10к/30к, замер FPS
+- [x] `npm run build`, деплой на GitHub Pages, проверка живой ссылки
+- [x] Коммит + `git push`
+- Статус: выполнен / Что сделано: SolarCanvas: culling роя через мировые границы кадра (1 деление/кадр), LOD far (zoom<fit*1.5: рой 1px, тела без градиентов/колец/мелких подписей, кламп свечения Солнца), хит-тест роя в мировых координатах (квадрат дистанции, linear scan 30к ~0.3мс — spatial hash не нужен); swarm.js: createSwarm(total) с пропорц. масштабированием групп; App: кнопки 7к/10к/30к + ?swarm=; замеры node updateSwarm/кадр: 7к 0.63мс, 10к 0.94мс, 30к 2.94мс, nonfinite 0; `npm run build` OK (32 модуля); `npx gh-pages -d dist` Published (ветка gh-pages c887155), но https://hubduing.github.io/Solar-system/ отвечает 404 — вероятно, в Settings→Pages не выбран источник gh-pages или идёт пропагация, требуется проверка владельцем; push в main.
 
 ## Регламент работы
 1. Делаем строго по одному шагу за сессию.

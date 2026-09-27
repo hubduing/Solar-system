@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import SolarCanvas from './components/SolarCanvas.jsx'
 import { BODIES } from './data/bodies.js'
-import { FACTION_NAMES, KIND_INFO, SWARM_TOTAL } from './sim/swarm.js'
+import { FACTION_NAMES, KIND_INFO } from './sim/swarm.js'
 import './App.css'
 
 const SPEEDS = [1, 10, 100]
+const SWARM_SIZES = [7000, 10000, 30000]
 
 export default function App() {
   const [selected, setSelected] = useState(null)
@@ -13,6 +14,15 @@ export default function App() {
   const [paused, setPaused] = useState(false)
   const [timeScale, setTimeScale] = useState(1)
   const [factionVisible, setFactionVisible] = useState([true, true, true, true, true])
+  const [swarmSize, setSwarmSize] = useState(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('swarm')
+      const n = q ? parseInt(q, 10) : 7000
+      return Number.isFinite(n) ? Math.max(1000, Math.min(60000, n)) : 7000
+    } catch {
+      return 7000
+    }
+  })
   const canvasApi = useRef(null)
 
   // время -> движок
@@ -74,6 +84,11 @@ export default function App() {
     // canvas сам вызовет onSelect(null) + onBodiesChange
   }
 
+  const changeSwarm = (n) => {
+    const real = canvasApi.current?.setSwarmCount(n)
+    setSwarmSize(real || n)
+  }
+
   return (
     <div className="app">
       <header className="hud-header">
@@ -82,7 +97,7 @@ export default function App() {
             <span className="aquila">☩</span>
             <h1>SOLAR SYSTEM M42</h1>
           </div>
-          <span className="subtitle">Тактический стол Инквизиции — <b>Шаг 4: интерактив Инквизитора</b></span>
+          <span className="subtitle">Тактический стол Инквизиции — <b>Шаг 5: оптимизация + Pages</b></span>
         </div>
         <div className="hud-controls">
           <div className="time-controls">
@@ -111,6 +126,18 @@ export default function App() {
             <button onClick={() => canvasApi.current?.zoomBy(1.25)}>+</button>
             <button onClick={() => canvasApi.current?.zoomBy(1 / 1.25)}>−</button>
             <button onClick={() => canvasApi.current?.resetView()}>Сброс (R)</button>
+          </div>
+          <div className="time-controls" title="Размер роя — тест производительности (culling + LOD)">
+            {SWARM_SIZES.map((v) => (
+              <button
+                key={v}
+                className={swarmSize === v ? 'active' : ''}
+                onClick={() => changeSwarm(v)}
+                title={`Рой: ${v / 1000}к объектов`}
+              >
+                {v / 1000}к
+              </button>
+            ))}
           </div>
         </div>
       </header>
@@ -166,7 +193,7 @@ export default function App() {
             <div className="selected-block">
               <h2>ДОСЬЕ</h2>
               <p>Клик по телу или точке роя — досье. Drag — панорама. Колесо — зум. Двойной клик / R — сброс. Space — пауза, 1/2/3 — скорость.</p>
-              <p className="faction">Живых тел: {visibleBodies.length} / {BODIES.length} · Рой: {SWARM_TOTAL}</p>
+              <p className="faction">Живых тел: {visibleBodies.length} / {BODIES.length} · Рой: {swarmSize}</p>
               {alive && alive.size < BODIES.length && (
                 <p className="omen">☠ Экстерминатус свершён. Погибших: {BODIES.length - alive.size}</p>
               )}
